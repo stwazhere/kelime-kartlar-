@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kelimeler">
+<meta name="theme-color" content="#3b5bdb">
+<title>Kelime Kartları</title>
+<style>
+:root{--bg:#f4f6fa;--surf:#fff;--text:#1a1f2b;--mut:#657089;--line:#dde2ec;--acc:#3b5bdb;--acc-t:#fff;--ok:#2b8a5a;--warn:#c2410c;--front:#fff;--back:#e9eeff;--hl:#edf1ff}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#12151c;--surf:#1b2029;--text:#e8ebf2;--mut:#9aa4ba;--line:#2c3342;--acc:#8aa4ff;--acc-t:#0c1227;--ok:#6fcf9b;--warn:#fb923c;--front:#1f2531;--back:#1a2340;--hl:#222b45}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{font-size:1.35rem;margin:0}
+input,textarea{font:inherit;color:var(--text);background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;width:100%}
+input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px}
+textarea{min-height:80px;resize:vertical;margin-top:10px}
+button{font:inherit;color:var(--text);background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer}
+button:hover{border-color:var(--acc)}button:disabled{opacity:.55;cursor:default}
+button.pri{background:var(--acc);color:var(--acc-t);border-color:var(--acc)}
+.row{display:flex;gap:8px}
+#msg,#authMsg{min-height:1.4em;margin:8px 2px 0;font-size:.9rem;color:var(--mut)}
+.err{color:var(--warn)!important}.ok{color:var(--ok)!important}
+.box{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:10px}
+.box h2{font-size:1rem;margin:0 0 8px}
+.cand{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.cand input{width:auto}.cand small{color:var(--mut)}
+#auth{max-width:380px;margin:60px auto 0}#auth input{margin-top:10px}
+.tabs{display:flex;gap:6px;margin:14px 0;border-bottom:1px solid var(--line)}
+.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:none;padding:8px 12px;color:var(--mut)}
+.tabs button.on{color:var(--text);border-bottom-color:var(--acc);font-weight:600}
+.tabs span{font-size:.8rem;background:var(--surf);border:1px solid var(--line);border-radius:99px;padding:0 7px;margin-left:4px}
+.grid{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:760px){.grid{grid-template-columns:1fr 330px;align-items:start}}
+.scene{perspective:1000px}
+.card{position:relative;height:240px;transition:transform .45s;transform-style:preserve-3d;cursor:pointer}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;overflow:auto}
+.front{background:var(--front)}.back{background:var(--back);transform:rotateY(180deg)}
+.big{font-size:clamp(1.6rem,6vw,2.3rem);font-weight:650;word-break:break-word}
+.hint{margin-top:10px;font-size:.8rem;color:var(--mut)}
+.mean{font-size:1.25rem;margin:2px 0}.mean b{color:var(--mut);font-weight:500;margin-right:4px}
+.ctl{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap}
+.cnt{min-width:70px;text-align:center;color:var(--mut);font-size:.9rem}
+.empty{color:var(--mut);text-align:center;padding:30px 10px}
+.list{background:var(--surf);border:1px solid var(--line);border-radius:14px;max-height:460px;overflow-y:auto}
+.list h3{margin:0;padding:10px 12px;font-size:.85rem;color:var(--mut);font-weight:500}
+.lt{position:sticky;top:0;background:var(--surf);padding:4px 12px;font-weight:700;font-size:.8rem;color:var(--acc);border-bottom:1px solid var(--line)}
+.it{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;cursor:pointer;border-bottom:1px solid var(--line)}
+.it.cur{background:var(--hl)}.it .t{flex:1;min-width:0}.it .wd{font-weight:600}
+.it .mn{display:block;font-size:.8rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini{padding:3px 8px;font-size:.85rem;border-radius:8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="auth" class="box" hidden>
+    <h2>Giriş yap</h2>
+    <input id="em" type="email" placeholder="E-posta" autocomplete="email">
+    <input id="pw" type="password" placeholder="Şifre (en az 6 karakter)" autocomplete="current-password">
+    <div class="row" style="margin-top:10px"><button id="in" class="pri">Giriş yap</button><button id="up">Kayıt ol</button></div>
+    <div id="authMsg"></div>
+  </div>
+
+  <div id="app" hidden>
+    <header><h1>Kelime Kartları</h1><button id="out">Çıkış</button></header>
+    <div class="row"><input id="w" placeholder="İngilizce kelime (örn. inference)" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="go" class="pri">Anlamları getir</button></div>
+
+    <div id="prev" class="box" hidden>
+      <h2 id="ph"></h2>
+      <div id="cands"></div>
+      <input id="own" placeholder="Kendi anlamını ekle (birden fazlaysa virgülle ayır)" style="margin-top:10px">
+      <textarea id="pnote" placeholder="Not (isteğe bağlı)"></textarea>
+      <div class="row" style="margin-top:10px"><button id="save" class="pri">Kartlara ekle</button><button id="cancel">Vazgeç</button></div>
+    </div>
+    <div id="msg" aria-live="polite"></div>
+
+    <div class="tabs">
+      <button id="t0" class="on">Öğreniyorum <span id="c0">0</span></button>
+      <button id="t1">Ezberlediklerim <span id="c1">0</span></button>
+    </div>
+    <div class="grid">
+      <section>
+        <div id="cardArea">
+          <div class="scene"><div class="card" id="card"><div class="face front" id="ff"></div><div class="face back" id="fb"></div></div></div>
+          <div class="ctl"><button id="prevB">←</button><span class="cnt" id="pos"></span><button id="nextB">→</button></div>
+          <div class="ctl"><button id="shuf">🔀 Karıştır</button><button id="edit">✎ Anlamı düzenle</button><button id="mv"></button></div>
+          <input id="ed" hidden placeholder="Anlamlar, virgülle ayır. Kaydetmek için Enter" style="margin-top:10px">
+          <textarea id="note" placeholder="Notlarım (örnek cümle, kitaptaki bağlam…)"></textarea>
+        </div>
+        <div id="emptyArea" class="empty" hidden></div>
+      </section>
+      <aside class="list" id="list"></aside>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ====== AYAR: README.md'deki 3. adımda bu iki satırı doldur ====== */
+const SUPABASE_URL = "https://iinczzzsukandhjjexyq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbmN6enpzdWthbmRoampleHlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNjQ4MjEsImV4cCI6MjEwNzg0MDgyMX0.UjyIcsk9KhcS_v0S4MC8JJpawsDO45alAxnAuKS7udQ";
+/* ================================================================ */
+
+const $ = i => document.getElementById(i);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => s.trim().toLowerCase().replace(/\s+/g, " ");
+const split = s => s.split(/[,;]/).map(x => x.trim()).filter(Boolean);
+const POS = {noun:"isim",verb:"fiil",adjective:"sıfat",adverb:"zarf",preposition:"edat",conjunction:"bağlaç",pronoun:"zamir",interjection:"ünlem"};
+let sb, S = [], tab = false, deck = [], idx = 0, pending = "", nt;
+const card = $("card");
+
+const say = (t, k) => { const m = $("msg"); m.textContent = t || ""; m.className = k || ""; };
+const authSay = t => { $("authMsg").textContent = t; };
+const cur = () => S.filter(x => x.learned === tab);
+const curWord = () => S.find(x => x.id === deck[idx]);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function syncDeck(reset){
+  const ids = cur().map(x => x.id);
+  if(reset) deck = shuffle(ids.slice());
+  else { deck = deck.filter(i => ids.includes(i)); ids.forEach(i => { if(!deck.includes(i)) deck.push(i); }); }
+  if(idx >= deck.length) idx = Math.max(0, deck.length - 1);
+}
+
+/* ---------- giriş ---------- */
+async function init(){
+  if(SUPABASE_URL.includes("BURAYA")){ $("auth").hidden = false; authSay("Önce index.html içindeki SUPABASE_URL ve SUPABASE_KEY değerlerini doldur (README.md)."); return; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data } = await sb.auth.getSession();
+  data.session ? start() : showAuth();
+  sb.auth.onAuthStateChange(ev => { if(ev === "SIGNED_OUT") showAuth(); });
+}
+function showAuth(){ $("app").hidden = true; $("auth").hidden = false; }
+async function login(up){
+  const email = $("em").value.trim(), password = $("pw").value;
+  if(!email || password.length < 6){ authSay("E-posta ve en az 6 karakterli bir şifre gir."); return; }
+  const r = up ? await sb.auth.signUp({email, password}) : await sb.auth.signInWithPassword({email, password});
+  if(r.error){ authSay(r.error.message); return; }
+  if(!r.data.session){ authSay("Kayıt oldu. E-postana gelen onay bağlantısına tıkla, sonra giriş yap."); return; }
+  start();
+}
+async function start(){ $("auth").hidden = true; $("app").hidden = false; await load(true); }
+async function load(reset){
+  const { data, error } = await sb.from("words").select("*").order("word");
+  if(error){ say("Kelimeler yüklenemedi: " + error.message, "err"); return; }
+  S = data; syncDeck(reset); render();
+}
+
+/* ---------- anlam bulma ---------- */
+async function lookup(w){
+  const out = [], seen = new Set();
+  const push = (t, p) => { t = (t || "").trim(); const k = t.toLowerCase(); if(t && !seen.has(k)){ seen.add(k); out.push({t, p: POS[p] || p || ""}); } };
+  try {
+    const r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&dt=bd&q=" + encodeURIComponent(w));
+    const d = await r.json();
+    if(d[0] && d[0][0]) push(d[0][0][0]);
+    (d[1] || []).forEach(e => (e[1] || []).forEach(t => push(t, e[0])));
+  } catch(e) {}
+  if(out.length < 2){
+    try {
+      const r = await fetch("https://api.mymemory.translated.net/get?langpair=en|tr&q=" + encodeURIComponent(w));
+      const d = await r.json();
+      push(d.responseData && d.responseData.translatedText);
+      (d.matches || []).forEach(m => push(m.translation));
+    } catch(e) {}
+  }
+  return out.slice(0, 6);
+}
+async function fetchMeanings(){
+  const w = norm($("w").value);
+  if(!w){ say("Önce bir kelime yaz.", "err"); return; }
+  const ex = S.find(x => x.word === w);
+  if(ex){ tab = ex.learned; syncDeck(true); idx = deck.indexOf(ex.id); render(); closePrev(); say("“" + w + "” zaten " + (ex.learned ? "Ezberlediklerim" : "Öğreniyorum") + " listesinde. Kartını açtım.", "ok"); $("w").value = ""; return; }
+  say("Anlamlar aranıyor…"); $("go").disabled = true;
+  const c = await lookup(w);
+  $("go").disabled = false; pending = w;
+  $("ph").textContent = "“" + w + "” için anlamlar";
+  $("cands").innerHTML = c.length
+    ? c.map((x, i) => '<label class="cand"><input type="checkbox" value="' + esc(x.t) + '"' + (i < 2 ? " checked" : "") + '><span>' + esc(x.t) + (x.p ? ' <small>' + esc(x.p) + '</small>' : "") + '</span></label>').join("")
+    : '<div class="hint">Otomatik anlam bulunamadı. Aşağıya kendin yazabilirsin.</div>';
+  $("own").value = ""; $("pnote").value = ""; $("prev").hidden = false; say(c.length ? "Kartta görünmesini istediklerini seç." : "");
+  $("own").focus();
+}
+function closePrev(){ $("prev").hidden = true; pending = ""; }
+async function addCard(){
+  const sel = [...document.querySelectorAll("#cands input:checked")].map(i => i.value);
+  const meanings = [...split($("own").value), ...sel];
+  if(!meanings.length){ say("En az bir anlam seç ya da kendin yaz.", "err"); return; }
+  $("save").disabled = true;
+  const { data, error } = await sb.from("words").insert({word: pending, meanings, note: $("pnote").value.trim()}).select().single();
+  $("save").disabled = false;
+  if(error){ say(error.code === "23505" ? "Bu kelime zaten kayıtlı." : "Kaydedilemedi: " + error.message, "err"); return; }
+  S.push(data); tab = false; syncDeck(); idx = deck.indexOf(data.id);
+  say("“" + data.word + "” eklendi.", "ok"); closePrev(); $("w").value = ""; render(); $("w").focus();
+}
+
+/* ---------- çizim ---------- */
+function setFlip(on, instant){
+  if(instant){ card.style.transition = "none"; card.classList.toggle("flip", on); void card.offsetWidth; card.style.transition = ""; }
+  else card.classList.toggle("flip", on);
+}
+function render(){
+  const w = curWord();
+  $("c0").textContent = S.filter(x => !x.learned).length; $("c1").textContent = S.filter(x => x.learned).length;
+  $("t0").className = tab ? "" : "on"; $("t1").className = tab ? "on" : "";
+  $("cardArea").hidden = !w; $("emptyArea").hidden = !!w;
+  if(!w) $("emptyArea").textContent = tab ? "Henüz ezberlediğin kelime yok." : "Henüz kart yok. Yukarıdan bir kelime ekleyerek başla.";
+  else {
+    setFlip(false, true); $("ed").hidden = true;
+    $("ff").innerHTML = '<div class="big">' + esc(w.word) + '</div><div class="hint">anlamı görmek için karta dokun</div>';
+    $("fb").innerHTML = w.meanings.map((x, i) => '<div class="mean">' + (w.meanings.length > 1 ? "<b>" + (i + 1) + ".</b>" : "") + esc(x) + "</div>").join("");
+    $("pos").textContent = (idx + 1) + " / " + deck.length;
+    $("mv").textContent = tab ? "↩ Tekrar öğrenmem lazım" : "✓ Ezberledim"; $("mv").className = tab ? "" : "pri";
+    $("note").value = w.note || "";
+  }
+  renderList(w);
+}
+function renderList(w){
+  const L = cur(), el = $("list");
+  if(!L.length){ el.innerHTML = "<h3>" + (tab ? "Ezberlediklerin burada listelenecek." : "Alfabetik liste burada görünecek.") + "</h3>"; return; }
+  const s = L.slice().sort((a, b) => a.word.localeCompare(b.word, "en"));
+  let h = "<h3>" + (tab ? "Ezberlenenler, alfabetik" : "Alfabetik liste") + " (" + s.length + ")</h3>", last = "";
+  s.forEach(x => {
+    const l = x.word.charAt(0).toUpperCase();
+    if(l !== last){ h += '<div class="lt">' + esc(l) + "</div>"; last = l; }
+    h += '<div class="it' + (w && w.id === x.id ? " cur" : "") + '" data-id="' + x.id + '"><div class="t"><span class="wd">' + esc(x.word) + (x.note ? " 📝" : "") + '</span><span class="mn">' + esc(x.meanings.join(", ")) + "</span></div>"
+      + '<button class="mini" data-a="mv" title="' + (tab ? "Geri al" : "Ezberledim") + '">' + (tab ? "↩" : "✓") + '</button><button class="mini" data-a="del" title="Tamamen sil">✕</button></div>';
+  });
+  el.innerHTML = h;
+  const c = el.querySelector(".cur"); if(c) el.scrollTop = Math.max(0, c.offsetTop - el.clientHeight / 2);
+}
+
+/* ---------- işlemler ---------- */
+async function patch(id, fields){
+  const { error } = await sb.from("words").update(fields).eq("id", id);
+  if(error){ say("Kaydedilemedi: " + error.message, "err"); return false; }
+  Object.assign(S.find(x => x.id === id), fields); return true;
+}
+async function setLearned(id, v){
+  const w = S.find(x => x.id === id);
+  if(await patch(id, {learned: v})){ syncDeck(); render(); say("“" + w.word + "” " + (v ? "Ezberlediklerim listesine taşındı." : "tekrar Öğreniyorum listesine döndü."), "ok"); }
+}
+async function del(id){
+  const { error } = await sb.from("words").delete().eq("id", id);
+  if(error){ say("Silinemedi: " + error.message, "err"); return; }
+  S = S.filter(x => x.id !== id); syncDeck(); render(); say("Kelime tamamen silindi.");
+}
+const step = d => { if(deck.length){ idx = (idx + d + deck.length) % deck.length; render(); } };
+
+/* ---------- olaylar ---------- */
+$("in").onclick = () => login(false); $("up").onclick = () => login(true);
+$("pw").onkeydown = e => { if(e.key === "Enter") login(false); };
+$("out").onclick = () => sb.auth.signOut();
+$("go").onclick = fetchMeanings;
+$("w").onkeydown = e => { if(e.key === "Enter") fetchMeanings(); };
+$("save").onclick = addCard; $("cancel").onclick = () => { closePrev(); say(""); };
+card.onclick = () => setFlip(!card.classList.contains("flip"));
+$("prevB").onclick = () => step(-1); $("nextB").onclick = () => step(1);
+$("shuf").onclick = () => { syncDeck(true); idx = 0; render(); };
+$("mv").onclick = () => { const w = curWord(); if(w) setLearned(w.id, !w.learned); };
+$("t0").onclick = () => { tab = false; syncDeck(true); idx = 0; say(""); render(); };
+$("t1").onclick = () => { tab = true; syncDeck(true); idx = 0; say(""); render(); };
+$("edit").onclick = () => { const w = curWord(), e = $("ed"); if(!w) return; e.hidden = !e.hidden; if(!e.hidden){ e.value = w.meanings.join(", "); e.focus(); } };
+$("ed").onkeydown = async e => {
+  if(e.key !== "Enter") return;
+  const w = curWord(), m = split(e.target.value);
+  if(w && m.length && await patch(w.id, {meanings: m})) render();
+};
+$("note").oninput = function(){
+  const w = curWord(); if(!w) return;
+  w.note = this.value; clearTimeout(nt);
+  nt = setTimeout(() => patch(w.id, {note: w.note}), 700);
+};
+$("list").onclick = e => {
+  const it = e.target.closest(".it"); if(!it) return;
+  const id = it.dataset.id, b = e.target.closest("button");
+  if(b && b.dataset.a === "mv"){ const w = S.find(x => x.id === id); setLearned(id, !w.learned); return; }
+  if(b && b.dataset.a === "del"){
+    if(b.dataset.arm) del(id);
+    else { b.dataset.arm = "1"; b.textContent = "Sil?"; b.style.color = "var(--warn)"; setTimeout(() => { if(b.isConnected){ delete b.dataset.arm; b.textContent = "✕"; b.style.color = ""; } }, 2500); }
+    return;
+  }
+  idx = Math.max(0, deck.indexOf(id)); render();
+  if(matchMedia("(max-width:759px)").matches) scrollTo({top: 0, behavior: "smooth"});
+};
+document.addEventListener("keydown", e => {
+  if(["INPUT", "BUTTON", "TEXTAREA"].includes(e.target.tagName)) return;
+  if(e.key === "ArrowRight") step(1); else if(e.key === "ArrowLeft") step(-1);
+  else if((e.key === " " || e.key === "Enter") && deck.length){ e.preventDefault(); setFlip(!card.classList.contains("flip")); }
+});
+document.addEventListener("visibilitychange", () => { if(!document.hidden && sb && !$("app").hidden) load(false); });
+
+init();
+</script>
+</body>
+</html>
